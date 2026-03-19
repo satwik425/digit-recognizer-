@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Model files (large — store in git-lfs or cloud storage)
+*.h5
+*.pt
+*.onnx
+tfjs_model/
+*.png   # generated plots
+
+# TF/PyTorch cache
+.cache/
+
+# Node / React
+node_modules/
+frontend/build/
+frontend/.env.local
+.npm/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+eval_summary.json

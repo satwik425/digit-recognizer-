@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+
+  # ── Backend (FastAPI) ──────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: digit-recognizer-api
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the trained model file so you don't bake it into the image
+      - ./model/mnist_cnn.h5:/app/mnist_cnn.h5:ro
+      - ./model/model_metrics.json:/app/model_metrics.json:ro
+    environment:
+      - PORT=8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ── Frontend (React dev server) ───────────────────────────────
+  frontend:
+    image: node:20-alpine
+    container_name: digit-recognizer-ui
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - CHOKIDAR_USEPOLLING=true   # needed for file-watching inside Docker
+    command: sh -c "npm install && npm start"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  default:
+    name: digit-recognizer-net

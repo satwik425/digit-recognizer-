@@ -1,0 +1,39 @@
+# render.yaml — Render.com deployment config
+# https://render.com/docs/blueprint-spec
+#
+# Usage:
+#   1. Push this file to the root of your GitHub repo.
+#   2. Create a new Render Blueprint and point it at your repo.
+#   3. Add the env vars listed under envVars (mark as secret where noted).
+
+services:
+  - type: web
+    name: digit-recognizer-api
+    runtime: python
+    region: oregon
+    plan: starter          # free tier; upgrade for always-on
+
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r backend/requirements.txt
+
+    startCommand: |
+      cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+      - key: PORT
+        value: "10000"
+      # Set CORS_ORIGINS to your Vercel frontend URL, e.g.:
+      # - key: CORS_ORIGINS
+      #   value: "https://your-app.vercel.app"
+
+    healthCheckPath: /health
+
+    # Persist the trained model across deploys using a Render Disk.
+    # First deploy: upload mnist_cnn.h5 via the Render shell.
+    disk:
+      name: model-storage
+      mountPath: /opt/render/project/src/backend
+      sizeGB: 1

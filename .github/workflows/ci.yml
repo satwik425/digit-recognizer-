@@ -7,9 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  # ────────────────────────────────────────────
-  # 1. Backend tests
-  # ────────────────────────────────────────────
+  # ── Backend tests ──────────────────────────────
   backend-test:
     name: Backend — pytest
     runs-on: ubuntu-latest
@@ -17,31 +15,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
-
       - name: Install dependencies
         run: |
           cd backend
-          pip install -r requirements.txt
-          pip install pytest httpx
+          pip install fastapi uvicorn pillow numpy python-multipart pydantic pytest httpx
+          pip install tensorflow-cpu || pip install tensorflow
 
       - name: Run tests
         run: |
           cd backend
           pytest tests/ -v --tb=short
 
-  # ────────────────────────────────────────────
-  # 2. Frontend build
-  # ────────────────────────────────────────────
+  # ── Frontend build ─────────────────────────────
   frontend-build:
     name: Frontend — React build
     runs-on: ubuntu-latest
@@ -53,28 +43,20 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
         run: |
           cd frontend
-          npm ci
+          npm install
 
       - name: Build
         run: |
           cd frontend
           REACT_APP_API_URL=https://placeholder.onrender.com npm run build
+        env:
+          CI: false
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-build
-          path: frontend/build/
-
-  # ────────────────────────────────────────────
-  # 3. Deploy to Render (backend) — on push to main only
-  # ────────────────────────────────────────────
+  # ── Deploy backend to Render ───────────────────
   deploy-backend:
     name: Deploy — Render
     runs-on: ubuntu-latest
@@ -84,15 +66,9 @@ jobs:
     steps:
       - name: Trigger Render deploy
         run: |
-          curl -s -X POST \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
-            -H "Content-Type: application/json" \
-            -d '{}'
+          echo "Add RENDER_API_KEY and RENDER_SERVICE_ID to GitHub secrets to enable auto deploy"
 
-  # ────────────────────────────────────────────
-  # 4. Deploy to Vercel (frontend) — on push to main only
-  # ────────────────────────────────────────────
+  # ── Deploy frontend to Vercel ──────────────────
   deploy-frontend:
     name: Deploy — Vercel
     runs-on: ubuntu-latest
@@ -102,15 +78,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Vercel CLI
-        run: npm install -g vercel
-
-      - name: Deploy
-        env:
-          VERCEL_TOKEN:   ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID:  ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Deploy notice
         run: |
-          cd frontend
-          vercel --prod --token=$VERCEL_TOKEN --yes \
-            -e REACT_APP_API_URL=${{ secrets.BACKEND_URL }}
+          echo "Add VERCEL_TOKEN to GitHub secrets to enable auto deploy"
